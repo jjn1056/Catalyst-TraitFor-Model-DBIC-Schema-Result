@@ -1,0 +1,47 @@
+# NAME
+
+Catalyst::TraitFor::Model::DBIC::Schema::Result - PerRequest Result from Catalyst Request
+
+# SYNOPSIS
+
+In your configuration, set the trait:
+
+    MyApp->config(
+      'Model::Schema' => {
+        traits => ['Result'],
+        schema_class => 'MyApp::Schema',
+        connect_info => [ ... ],
+      },
+    );
+
+Now in your actions you can call the generated models, which get their ->find($id) from
+$c->request->args.
+
+    sub user :Local Args(1) {
+      my ($self, $c) = @_;
+      my $user = $c->model('Schema::User::Result');
+    }
+
+# DESCRIPTION
+
+Its a common case to get the result of a [DBIx::Class](https://metacpan.org/pod/DBIx::Class) ->find based on the current
+[Catalyst](https://metacpan.org/pod/Catalyst) request (typically from the Args attribute).  This is an experimental trait
+to see if we can usefull encapsulate that common task in a way that is not easily broken.
+
+If you can't read the source code and figure out what is going on, might want to stay
+away for now!
+
+# SEE ALSO
+
+[Catalyst](https://metacpan.org/pod/Catalyst), [Catalyst::Model::DBIC::Schema](https://metacpan.org/pod/Catalyst::Model::DBIC::Schema).
+
+# AUTHOR
+
+John Napiorkowski [email:jjnapiork@cpan.org](email:jjnapiork@cpan.org)
+
+# COPYRIGHT & LICENSE
+
+Copyright 2015, John Napiorkowski [email:jjnapiork@cpan.org](email:jjnapiork@cpan.org)
+
+This library is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
