@@ -12,6 +12,7 @@ BEGIN {
     first_name => { data_type => "varchar", size => 100 });
 
   __PACKAGE__->set_primary_key("id");
+  __PACKAGE__->add_unique_constraint([ qw/first_name/ ]);
 
   package MyApp::Schema;
   $INC{'MyApp/Schema.pm'} = __FILE__;
@@ -34,6 +35,13 @@ BEGIN {
   use base 'Catalyst::Controller';
 
   sub user :Local Args(1) {
+    my ($self, $c) = @_;
+    Test::Most::ok (my $user = $c->model('Schema::User::Result'));
+
+    $c->res->body('test');
+  }
+
+  sub user_with_attr :Local Args(1) ResultModelFrom(first_name=>$args[0]) {
     my ($self, $c) = @_;
     Test::Most::ok (my $user = $c->model('Schema::User::Result'));
 
@@ -65,6 +73,10 @@ use Catalyst::Test 'MyApp';
 
 {
   my ($res, $c) = ctx_request( '/example/user/1' );
+}
+
+{
+  my ($res, $c) = ctx_request( '/example/user_with_attr/john' );
 }
 
 done_testing;

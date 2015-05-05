@@ -1,4 +1,8 @@
 # This file documents the revision history for Perl extension Catalyst-TraitFor-Model-DBIC-Schema-Result.
 
+0.002 04 May 2015
+  - The action where you call the model may declare subroutine
+    attributes used to inform how args are converted to ->find.
+
 0.001 04 May 2015
   - First Release.
