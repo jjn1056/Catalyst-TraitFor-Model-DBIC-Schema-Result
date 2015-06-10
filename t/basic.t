@@ -36,7 +36,10 @@ BEGIN {
 
   sub user :Local Args(1) {
     my ($self, $c) = @_;
-    Test::Most::ok (my $user = $c->model('Schema::User::Result'));
+
+    Test::Most::ok (my $user1 = $c->model('Schema::User::Result'));
+    Test::Most::ok (my $user2 = $c->model('Schema::User::Result'));
+    Test::Most::ok (my $user3 = $c->model('Schema::User::Result'));
 
     $c->res->body('test');
   }
@@ -48,14 +51,39 @@ BEGIN {
     $c->res->body('test');
   }
 
+  sub user_with_local :Local {
+    my ($self, $c) = @_;
+
+    {
+      Test::Most::ok (my $user = $c->model('Schema::User::Result', 1));
+      Test::Most::is $user->first_name, 'john';
+    }
+ 
+    {
+      Test::Most::ok (my $user = $c->model('Schema::User::Result', 2));
+      Test::Most::is $user->first_name, 'joe';
+    }
+
+    {
+      Test::Most::ok (my $user = $c->model('Schema::User::Result', +{first_name=>'mark'}));
+      Test::Most::is $user->first_name, 'mark';
+    }
+
+    $c->res->body('test');
+  }
+
   package MyApp;
   use Catalyst;
   use Test::DBIx::Class
     -schema_class => 'MyApp::Schema', qw/User Schema/;
 
   User->populate([
-    ['first_name'],
-    [qw/john joe mark matt/]]);
+    ['id','first_name'],
+    [ 1 => 'john'],
+    [ 2 => 'joe'],
+    [ 3 => 'mark'],
+    [ 4 => 'matt'],
+  ]);
 
   MyApp->config(
     'Model::Schema' => {
@@ -77,6 +105,10 @@ use Catalyst::Test 'MyApp';
 
 {
   my ($res, $c) = ctx_request( '/example/user_with_attr/john' );
+}
+
+{
+  my ($res, $c) = ctx_request( '/example/user_with_local' );
 }
 
 done_testing;

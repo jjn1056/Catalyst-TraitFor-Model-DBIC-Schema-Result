@@ -1,5 +1,10 @@
 # This file documents the revision history for Perl extension Catalyst-TraitFor-Model-DBIC-Schema-Result.
 
+0.003 10 June 2015
+  - Allow you to submit args via $c->model($Result, @args)
+  - documentation updates.
+  - fixed error in the way I setup database fixtures.
+
 0.002 04 May 2015
   - The action where you call the model may declare subroutine
     attributes used to inform how args are converted to ->find.
