@@ -72,6 +72,19 @@ BEGIN {
     $c->res->body('test');
   }
 
+  sub new_result :Local Args(0) {
+    my ($self, $c) = @_;
+
+    Test::Most::ok (my $user = $c->model('Schema::User::Result'));
+    Test::Most::is $user->first_name, undef;
+    Test::Most::ok !$user->in_storage;
+
+    $user->first_name('Vanessa');
+    $user->insert;
+
+    Test::Most::ok $user->in_storage;
+  }
+
   package MyApp;
   use Catalyst;
   use Test::DBIx::Class
@@ -110,5 +123,10 @@ use Catalyst::Test 'MyApp';
 {
   my ($res, $c) = ctx_request( '/example/user_with_local' );
 }
+
+{
+  my ($res, $c) = ctx_request( '/example/new_result' );
+}
+
 
 done_testing;

@@ -2,7 +2,7 @@ package Catalyst::TraitFor::Model::DBIC::Schema::Result;
 
 use Moose::Role;
 
-our $VERSION = '0.003';
+our $VERSION = '0.004';
 
 after '_install_rs_models', sub {
   my $self  = shift;
@@ -32,9 +32,35 @@ after '_install_rs_models', sub {
         ## Arguments passed via ->Model take precident.
         my @find = scalar(@passed_args) ? @passed_args : @args;
 
-        $c->model($self->model_name)
-        ->resultset($moniker)
-          ->find(@find); # this line is pretty much the whole point
+        my $find;
+        if($c->debug) {
+          require JSON::MaybeXS;
+          my $json_with_args = JSON::MaybeXS->new(utf8 => 1, allow_nonref=>1);
+          $find = $json_with_args->encode(@find);
+        }
+
+        my $return;
+        if(scalar(@find)) {
+          if($c->debug) {
+            $c->log->info("Finding model via ${\$self->model_name}->$moniker"."::find($find)");
+          }
+          $return = $c->model($self->model_name)
+          ->resultset($moniker)
+            ->find(@find);
+
+          if($c->debug and !$return) {
+            $c->log->info("No records for ${\$self->model_name}->$moniker"."::find($find)");
+          }
+        } else {
+          if($c->debug) {
+            $c->log->info("No request arguments, returning new_result");
+          }
+          $return = $c->model($self->model_name)
+            ->resultset($moniker)
+              ->new_result(+{});
+        }
+
+        return $return;
       };
     };
   }
@@ -62,12 +88,32 @@ Now in your actions you can call the generated models, which get their ->find($i
 $c->request->args.
 
     sub user :Local Args(1) {
-      my ($self, $c) = @_;
+      my ($self, $c, $id) = @_;
+
+      ## Like: $c->model('Schema::User')->find($id)
       my $user = $c->model('Schema::User::Result');
     }
 
 You can also control how the 'find' on the Resultset works via an action attribute
 ('ResultModelFrom') or via arguments passed to the 'model' call.
+
+    sub user_with_attr :Local Args(1) ResultModelFrom(first_name=>$args[0]) {
+      my ($self, $c, @args) = @_;
+
+      ## Like: $c->model('Schema::User')->find({first_name=>$args[0]})
+      my $user = $c->model('Schema::User::Result');
+
+    }
+
+Lastly, if you invoke this method on an action the explicitly defines no arguments
+you get a new result rather than a database lookup
+
+    sub new_user_result :Local Args(0) {
+      my ($self, $c) = @_;
+
+      ## Like: $c->model('Schema::User')->new_result(+{});
+      my $new_user_result = $c->model('Schema::User::Result');
+    }
 
 =head1 DESCRIPTION
 
@@ -83,14 +129,14 @@ L<Catalyst::Model::DBIC::Schema>) it automatically creates a second PerRequest m
 for each ResultSource in your Schema.  This new Model is named by taking the name
 of the resultsource (for example 'Schema::User') and adding '::Result' to it (or
 in the example case 'Schema::User::Result').  When you request an instance of this
-model, it will automatically assume the first argument of the current action is intended
+model, it will automatically assume the arguments of the current action is intended
 to be the index by which the ->find locates your database row.  So basically the two
 following actions are the same in effect:
 
 With trait:
 
     sub user :Local Args(1) {
-      my ($self, $c) = @_;
+      my ($self, $c, $id) = @_;
       my $user = $c->model('Schema::User::Result');
     }
 
@@ -125,6 +171,26 @@ the pattern:
 
 This is experimental and may change as needed.  Basically this get converted
 to a hashref and submitted to ->find.
+
+=head1 Actions with no arguments
+
+If you current action has no arguments, we instead return a new result, which
+is a DBIC result that is not yet in storage.  You can use this to make a new
+row in the database and save it:
+
+    sub new_result :Local Args(0) {
+        my ($self, $c) = @_;
+        my $new_user = $c->model('Schema::User::Result');
+        $new_user->name('Fido');
+        $new_user->insert; # Save the new user.
+    }
+
+You might find this useful in some common patterns for validating POST parameters
+and using them to create a new object in the database.
+
+Please note that you should be quite explicit in setting Args(0) since in many
+cases leaving the Args attribute off defaults to 'as many args as you care to
+send!
 
 =head1 Passing arguments to ->model
 

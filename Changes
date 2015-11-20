@@ -1,5 +1,10 @@
 # This file documents the revision history for Perl extension Catalyst-TraitFor-Model-DBIC-Schema-Result.
 
+0.004 20 November 2015
+  - Calling for a ::Result when there are no Args (or CaptureArgs) for the
+    current action, or calling with an argument of +{} will return a new empty
+    result object, suitable for creating a new row.
+
 0.003 10 June 2015
   - Allow you to submit args via $c->model($Result, @args)
   - documentation updates.
