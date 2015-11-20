@@ -102,7 +102,6 @@ You can also control how the 'find' on the Resultset works via an action attribu
 
       ## Like: $c->model('Schema::User')->find({first_name=>$args[0]})
       my $user = $c->model('Schema::User::Result');
-
     }
 
 Lastly, if you invoke this method on an action the explicitly defines no arguments
