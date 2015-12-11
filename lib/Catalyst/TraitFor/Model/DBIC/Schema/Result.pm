@@ -2,7 +2,7 @@ package Catalyst::TraitFor::Model::DBIC::Schema::Result;
 
 use Moose::Role;
 
-our $VERSION = '0.004';
+our $VERSION = '0.005';
 
 after '_install_rs_models', sub {
   my $self  = shift;
@@ -36,7 +36,7 @@ after '_install_rs_models', sub {
         if($c->debug) {
           require JSON::MaybeXS;
           my $json_with_args = JSON::MaybeXS->new(utf8 => 1, allow_nonref=>1);
-          $find = $json_with_args->encode(@find);
+          $find = scalar(@find) ? $json_with_args->encode(@find) : '[NEW RESULT]';
         }
 
         my $return;

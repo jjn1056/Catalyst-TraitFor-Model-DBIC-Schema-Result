@@ -1,5 +1,9 @@
 # This file documents the revision history for Perl extension Catalyst-TraitFor-Model-DBIC-Schema-Result.
 
+0.005 10 December 2015
+  - Fixed a bug when Catalyst debug mode is enabled and the call for a Result
+    model results in a new result.
+
 0.004 20 November 2015
   - Calling for a ::Result when there are no Args (or CaptureArgs) for the
     current action, or calling with an argument of +{} will return a new empty
