@@ -85,6 +85,16 @@ BEGIN {
     Test::Most::ok $user->in_storage;
   }
 
+  sub from_rs :Local Args(1) {
+    my ($self, $c, $id) = @_;
+    my $rs = $c->model("Schema::User")->search({first_name=>['john','joe']});
+
+    Test::Most::is $rs->count, 2, 'got right count';
+
+    $c->stash->{user} = $c->model('Schema::User::Result', $rs);
+    $c->response->body(1);
+  }
+
   package MyApp;
   use Catalyst;
   use Test::DBIx::Class
@@ -126,6 +136,18 @@ use Catalyst::Test 'MyApp';
 
 {
   my ($res, $c) = ctx_request( '/example/new_result' );
+}
+
+{
+  my ($res, $c) = ctx_request( '/example/from_rs/2' );
+  ok $res->content;
+  ok $c->stash->{user};
+  is $c->stash->{user}->first_name, 'joe';
+}
+{
+  my ($res, $c) = ctx_request( '/example/from_rs/3' );
+  ok $res->content;
+  ok ! $c->stash->{user};
 }
 
 

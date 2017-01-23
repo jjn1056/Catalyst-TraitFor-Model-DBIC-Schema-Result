@@ -1,8 +1,9 @@
 package Catalyst::TraitFor::Model::DBIC::Schema::Result;
 
 use Moose::Role;
+use Scalar::Util;
 
-our $VERSION = '0.005';
+our $VERSION = '0.006';
 
 after '_install_rs_models', sub {
   my $self  = shift;
@@ -29,6 +30,25 @@ after '_install_rs_models', sub {
           @args = (eval " {$template->[0]}");
         }
 
+        ## if the first argument is a resultset of the current model name
+        ## then use that instead of a new one.
+
+        my $rs = $c->model($self->model_name)
+          ->resultset($moniker);
+
+        if(
+          (Scalar::Util::blessed($passed_args[0]||'')) 
+            and
+          ($passed_args[0]->isa('DBIx::Class::ResultSet'))
+            and
+          ($passed_args[0]->result_source->source_name eq $moniker)
+        ) {
+          $c->log->info("Getting Result from existing ResultSet") if $c->debug;
+          $rs = shift(@passed_args);
+        }
+
+
+
         ## Arguments passed via ->Model take precident.
         my @find = scalar(@passed_args) ? @passed_args : @args;
 
@@ -44,9 +64,7 @@ after '_install_rs_models', sub {
           if($c->debug) {
             $c->log->info("Finding model via ${\$self->model_name}->$moniker"."::find($find)");
           }
-          $return = $c->model($self->model_name)
-          ->resultset($moniker)
-            ->find(@find);
+          $return = $rs->find(@find);
 
           if($c->debug and !$return) {
             $c->log->info("No records for ${\$self->model_name}->$moniker"."::find($find)");
@@ -55,9 +73,7 @@ after '_install_rs_models', sub {
           if($c->debug) {
             $c->log->info("No request arguments, returning new_result");
           }
-          $return = $c->model($self->model_name)
-            ->resultset($moniker)
-              ->new_result(+{});
+          $return = $rs->new_result(+{});
         }
 
         return $return;
@@ -103,6 +119,17 @@ You can also control how the 'find' on the Resultset works via an action attribu
       ## Like: $c->model('Schema::User')->find({first_name=>$args[0]})
       my $user = $c->model('Schema::User::Result');
     }
+
+If you want to use a resultset that is 'prepared' you can pass it as the first
+argument:
+
+    sub from_rs :Local Args(1) {
+      my ($self, $c, $id) = @_;
+      my $rs = $c->model("Schema::User")->search({first_name=>['john','joe']});
+      my $user = $c->model('Schema::User::Result', $rs);
+    }
+
+(This feature is probably most useful in a chaining setup.)
 
 Lastly, if you invoke this method on an action the explicitly defines no arguments
 you get a new result rather than a database lookup
@@ -238,7 +265,7 @@ John Napiorkowski L<email:jjnapiork@cpan.org>
   
 =head1 COPYRIGHT & LICENSE
  
-Copyright 2015, John Napiorkowski L<email:jjnapiork@cpan.org>
+Copyright 2017, John Napiorkowski L<email:jjnapiork@cpan.org>
  
 This library is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

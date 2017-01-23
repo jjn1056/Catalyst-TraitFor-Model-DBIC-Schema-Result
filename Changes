@@ -1,5 +1,8 @@
 # This file documents the revision history for Perl extension Catalyst-TraitFor-Model-DBIC-Schema-Result.
 
+0.006 23 January 2017
+  - Allow you to get a result from an existing resultset
+
 0.005 10 December 2015
   - Fixed a bug when Catalyst debug mode is enabled and the call for a Result
     model results in a new result.
